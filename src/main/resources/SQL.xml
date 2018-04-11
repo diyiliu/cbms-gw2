@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <sql id="selectVehicle" description="获取车辆信息"
+         fieldType="">
+        <![CDATA[
+            select v.id vehicleId,
+                   v.vincode,
+                   v.usestatus,
+                   v.createtime,
+                   v.gpsinstallstatus,
+                   v.innercode,
+                   v.producttypeid,
+                   v.productmodel,
+                   v.owneruserid
+              from bs_vehicle v
+        ]]>
+    </sql>
+    <sql id="selectCan" description="获取功能集信息"
+         fieldType="">
+        <![CDATA[
+            select v.code softVersionCode, f.code functionCode, f.name functionName, f.xml xml, f.alertXml alertXml from BS_GPSSOFTVERSION v JOIN Bs_Functionset f ON v.Dcsfunctionset=f.Id
+        ]]>
+    </sql>
+
+    <sql id="selectFenceAlarm" description="获取围栏报警信息"
+         fieldType="">
+        <![CDATA[
+            select id,
+               vehicleid,
+               alarmcategory,
+               starttime,
+               endtime,
+               startlng ,
+               startlat,
+               endlng,
+               endlat,
+               fenceid
+            from BS_VEHICLEALARM t
+            where t.ALARMCATEGORY=2 and  t.endtime is null
+
+        ]]>
+    </sql>
+    <sql id="selectAlarm" description="获取报警信息"
+         fieldType="">
+        <![CDATA[
+            select id,
+               vehicleid,
+               alarmcategory,
+               starttime,
+               endtime,
+               startlng ,
+               startlat,
+               endlng,
+               endlat,
+               fenceid,
+               alarmkey
+            from BS_VEHICLEALARM t
+            where t.endtime is null
+
+        ]]>
+    </sql>
+    <sql id="selectFence" description="获取围栏信息"
+         fieldType="">
+        <![CDATA[
+              select t.id,
+                   t.vehicleid,
+                   t.name,
+                   t.sharp,
+                   t.geoinfo,
+                   t.alarmtype,
+                   t.status
+              from BS_FENCE t where t.STATUS=1
+        ]]>
+    </sql>
+    <sql id="selectOnline" description="获取终端在线状态"
+         fieldType="">
+        <![CDATA[
+              select
+                   t.vehicleid,
+                   t.gpstime,
+                   t.accstatus
+              from BS_VEHICLEGPSINFO t where t.gpstime is not null
+        ]]>
+    </sql>
+</root>
