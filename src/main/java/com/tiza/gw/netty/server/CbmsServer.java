@@ -3,6 +3,7 @@ package com.tiza.gw.netty.server;
 import com.tiza.gw.netty.handler.ServerHandler;
 import com.tiza.gw.netty.handler.codec.CbmsDecoder;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -37,7 +38,9 @@ public class CbmsServer extends Thread{
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workGroup)
                     .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 1000)
+                    .option(ChannelOption.SO_BACKLOG, 1024)
+                    .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) {

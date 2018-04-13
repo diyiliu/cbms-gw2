@@ -22,9 +22,12 @@ public class CbmsDecoder extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         String host = ctx.channel().remoteAddress().toString().trim().replaceFirst("/", "");
 
-        if (in.readableBytes() < 3) {
+        // 主协议头长度
+        if (in.readableBytes() < 12) {
+
             return;
         }
+
         in.markReaderIndex();
         int len = in.readUnsignedShort();
 
@@ -36,7 +39,7 @@ public class CbmsDecoder extends ByteToMessageDecoder {
             return;
         }
 
-        if (in.readableBytes() < (len - 2)) {
+        if (in.readableBytes() < (len - 3)) {
 
             in.resetReaderIndex();
             return;

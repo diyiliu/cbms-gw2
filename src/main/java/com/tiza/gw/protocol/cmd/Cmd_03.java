@@ -1,10 +1,10 @@
 package com.tiza.gw.protocol.cmd;
 
+import com.tiza.gw.protocol.CbBaseParser;
 import com.tiza.gw.support.bean.FenceAlarmBean;
 import com.tiza.gw.support.bean.GpsInfoBean;
 import com.tiza.gw.support.cache.ICache;
 import com.tiza.gw.support.entity.VehicleInfoEntity;
-import com.tiza.gw.protocol.CbBaseParser;
 import com.tiza.gw.support.task.job.FenceAlarmJob;
 import com.tiza.gw.support.thrift.MapLocation;
 import com.tiza.gw.support.utils.CanUtils;
@@ -12,7 +12,7 @@ import com.tiza.gw.support.utils.CommonUtils;
 import com.tiza.gw.support.utils.EnumConfig;
 import com.tiza.gw.support.utils.ThriftUtils;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -50,33 +50,36 @@ public class Cmd_03 extends CbBaseParser {
     @Override
     public void parser(Object message, Object ctx) {
         GpsInfoBean bean = (GpsInfoBean) message;
-        ChannelHandlerContext channelHandlerContext = (ChannelHandlerContext) ctx;
-        ByteBuf bf = channelHandlerContext.alloc().buffer(bean.getMessages().length);
-        bf.writeBytes(bean.getMessages());
-        bf.markReaderIndex();
+        ByteBuf bf = Unpooled.copiedBuffer(bean.getMessages());
+
         //车辆VIN码长度
         int vinLen = bf.readByte();
         //车辆VIN码
         byte[] vinBytes = new byte[vinLen];
         bf.readBytes(vinBytes);
+
         String vinCode = new String(vinBytes);
         final VehicleInfoEntity entity = (VehicleInfoEntity) vehicleCache.get(vinCode);
         if (null == entity) {
             LOGGER.debug("不存在该编号的车辆,vincode:{}", vinCode);
             return;
         }
+
         //软件版本号长度
         int softVersionLen = bf.readByte();
+
         //软件版本号
         byte[] softVersionBytes = new byte[softVersionLen];
         bf.readBytes(softVersionBytes);
         final String softVersion = new String(softVersionBytes);
+
         //经纬度
-        final double lat = bf.readInt() / EnumConfig.CommonConfig.LNG_LAT_DIVIDE;
-        final double lng = bf.readInt() / EnumConfig.CommonConfig.LNG_LAT_DIVIDE;
+        final double lat = bf.readUnsignedInt() / EnumConfig.CommonConfig.LNG_LAT_DIVIDE;
+        final double lng = bf.readUnsignedInt() / EnumConfig.CommonConfig.LNG_LAT_DIVIDE;
         final int speed = bf.readUnsignedByte();
         final int direction = bf.readUnsignedByte();
-        final int altitude = bf.readShort();
+        final int altitude = bf.readUnsignedShort();
+
         int statusLen = bf.readByte();
         byte[] statusBytes = new byte[statusLen];
         bf.readBytes(statusBytes);

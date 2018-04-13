@@ -44,27 +44,40 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         AbstractProFactory factory = SpringUtil.getBean("cbFactory");
+        try {
+            ByteBuf bf = (ByteBuf) msg;
 
-        ByteBuf bf = (ByteBuf) msg;
-        bf.markReaderIndex();
-        int infoLen = bf.readUnsignedShort();
-        int protocolVersion = bf.readUnsignedByte();
-        int comeForm = bf.readUnsignedByte();
-        byte[] gpsTimeBytes = new byte[6];
-        bf.readBytes(gpsTimeBytes);
-        Date gpsDate = CommonUtils.getGpsTime(gpsTimeBytes);
-        int infoType = bf.readUnsignedByte();
-        int cmdId = bf.readUnsignedByte();
-        byte[] messages = new byte[bf.readableBytes()];
-        bf.readBytes(messages);
-        AbstractBaseParser parser = (AbstractBaseParser) factory.getCmd(cmdId);
-        if (null == parser) {
-            log.error("不存在{}指令ID的解析方法！", Integer.toHexString(cmdId));
-            return;
+            int infoLen = bf.readUnsignedShort();
+            int protocolVersion = bf.readUnsignedByte();
+            int comeForm = bf.readUnsignedByte();
+
+            byte[] gpsTimeBytes = new byte[6];
+            bf.readBytes(gpsTimeBytes);
+            Date gpsDate = CommonUtils.getGpsTime(gpsTimeBytes);
+
+            int infoType = bf.readUnsignedByte();
+            int cmdId = bf.readUnsignedByte();
+
+            // 无内容
+            if (bf.readableBytes() < 1){
+                log.info("指令[{}]内容为空!", String.format("%x", cmdId));
+                return;
+            }
+            byte[] messages = new byte[bf.readableBytes()];
+            bf.readBytes(messages);
+
+            AbstractBaseParser parser = (AbstractBaseParser) factory.getCmd(cmdId);
+            if (null == parser) {
+                log.error("不存在{}指令ID的解析方法！", Integer.toHexString(cmdId));
+                return;
+            }
+
+            GpsInfoBean bean = new GpsInfoBean(infoLen, protocolVersion, comeForm, gpsDate, infoType, cmdId, messages);
+            parser.parser(bean, ctx);
+        } catch (Exception e) {
+            log.error("数据解析异常！", e.getMessage());
+            e.printStackTrace();
         }
-
-        GpsInfoBean bean = new GpsInfoBean(infoLen, protocolVersion, comeForm, gpsDate, infoType, cmdId, messages);
-        parser.parser(bean, ctx);
     }
 
 
@@ -89,7 +102,9 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error("服务器异常[{}]!", cause.getMessage());
+        log.error("服务器异常[{}], 关闭连接!", cause.getMessage());
         cause.printStackTrace();
+        // 关闭连接
+        ctx.close();
     }
 }
