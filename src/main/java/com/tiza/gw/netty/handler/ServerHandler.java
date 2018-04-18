@@ -58,13 +58,12 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             int infoType = bf.readUnsignedByte();
             int cmdId = bf.readUnsignedByte();
 
-            // 无内容
-            if (bf.readableBytes() < 1){
-                log.info("指令[{}]内容为空!", String.format("%x", cmdId));
+            byte[] messages = null;
+            if (bf.readableBytes() > 0) {
+                messages = new byte[bf.readableBytes()];
+                bf.readBytes(messages);
                 return;
             }
-            byte[] messages = new byte[bf.readableBytes()];
-            bf.readBytes(messages);
 
             AbstractBaseParser parser = (AbstractBaseParser) factory.getCmd(cmdId);
             if (null == parser) {
